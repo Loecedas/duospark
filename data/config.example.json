@@ -1,0 +1,19 @@
+{
+  "DUO_JWT_TOKEN": "",
+  "FEISHU": {
+    "APP_ID": "",
+    "APP_SECRET": "",
+    "RECEIVE_PHONE_OR_EMAIL": ""
+  },
+  "schedule": {
+    "enabled": true,
+    "targetXp": 15,
+    "intervalHours": 5,
+    "normalCheckTime": "23:00",
+    "normalPunchTime": "23:10",
+    "sundayCheckTime": "17:00",
+    "sundayPunchTime": "17:10",
+    "notifyOnWarning": true,
+    "notifyOnAlreadyChecked": true
+  }
+}
