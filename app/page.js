@@ -211,6 +211,18 @@ export default function DuoGuardianPage() {
   const [feishuReceiver, setFeishuReceiver] = useState('');
   const [showAppSecret, setShowAppSecret] = useState(false);
 
+  // Auth Lock states (开屏密码保护)
+  const [isLocked, setIsLocked] = useState(false);
+  const [hasAccessPassword, setHasAccessPassword] = useState(false);
+  const [inputPassword, setInputPassword] = useState('');
+  const [showLockPassword, setShowLockPassword] = useState(false);
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
+  const [lockError, setLockError] = useState('');
+  const [isUnlocking, setIsUnlocking] = useState(false);
+  const [accessPassword, setAccessPassword] = useState('');
+  const [showAccessPassword, setShowAccessPassword] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+
   // Toast helper
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -283,12 +295,100 @@ export default function DuoGuardianPage() {
     return () => clearInterval(timer);
   }, []);
 
+  const checkAuthStatus = async () => {
+    try {
+      const res = await fetch('/api/auth');
+      const data = await res.json();
+      if (data.ok) {
+        setHasAccessPassword(Boolean(data.requiresAuth));
+        if (data.requiresAuth && !data.isAuthed) {
+          setIsLocked(true);
+        } else {
+          setIsLocked(false);
+        }
+      }
+    } catch (e) {
+      console.error('检查认证状态失败:', e);
+    }
+  };
+
+  const handleUnlock = async (e) => {
+    if (e) e.preventDefault();
+    if (!inputPassword.trim()) {
+      setLockError('请输入访问密码');
+      return;
+    }
+    setVerifyingPassword(true);
+    setLockError('');
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: inputPassword })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setIsUnlocking(true);
+        setTimeout(() => {
+          setIsLocked(false);
+          setIsUnlocking(false);
+          setInputPassword('');
+          loadAllData();
+        }, 350);
+        showToast('解锁成功，欢迎回来！', 'success');
+      } else {
+        setLockError(data.error || '访问密码错误，请重新输入');
+      }
+    } catch (err) {
+      setLockError('网络请求异常，请稍后重试');
+    } finally {
+      setVerifyingPassword(false);
+    }
+  };
+
+  const handleLockConsole = async () => {
+    try {
+      await fetch('/api/auth', { method: 'DELETE' });
+    } catch {}
+    setIsLocked(true);
+    setInputPassword('');
+    setLockError('');
+    showToast('控制台已锁定', 'info');
+  };
+
+  const handleSavePassword = async (overrideVal) => {
+    const valToSave = overrideVal !== undefined ? overrideVal : accessPassword;
+    setSavingConfig(true);
+    try {
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ACCESS_PASSWORD: valToSave })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast(valToSave ? '开屏访问密码已更新！' : '已清除访问密码，关闭开屏保护', 'success');
+        setHasAccessPassword(Boolean(data.masked?.hasPassword));
+        setAccessPassword('');
+      } else {
+        showToast('保存失败: ' + data.error, 'error');
+      }
+    } catch (e) {
+      showToast('保存出错: ' + e.message, 'error');
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
   const fetchConfig = async () => {
     try {
       const res = await fetch('/api/config');
       const data = await res.json();
       if (data.ok && data.config) {
         setJwt(data.config.DUO_JWT_TOKEN || '');
+        if (data.masked) {
+          setHasAccessPassword(Boolean(data.masked.hasPassword));
+        }
         const sc = data.config.schedule || {};
         setSchedEnabled(sc.enabled !== false);
         setIntervalHours(sc.intervalHours || 5);
@@ -356,7 +456,23 @@ export default function DuoGuardianPage() {
 
   // Initial load
   useEffect(() => {
-    loadAllData();
+    const initAuthAndData = async () => {
+      try {
+        const res = await fetch('/api/auth');
+        const data = await res.json();
+        if (data.ok) {
+          setHasAccessPassword(Boolean(data.requiresAuth));
+          if (data.requiresAuth && !data.isAuthed) {
+            setIsLocked(true);
+            return; // 密码保护启用且尚未解锁，暂缓拉取控制台数据
+          }
+        }
+      } catch (e) {
+        console.error('检查认证状态失败:', e);
+      }
+      loadAllData();
+    };
+    initAuthAndData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -522,6 +638,184 @@ export default function DuoGuardianPage() {
 
   return (
     <div className="container">
+      {/* ⚡ DuoSpark 开屏安全访问锁屏验证遮罩 */}
+      {isLocked && (
+        <div className={`duo-lock-overlay ${isUnlocking ? 'unlocking' : ''}`}>
+          <div className="duo-lock-card">
+            {/* 图标与标题同一行，无任何多余背景，极简大气 */}
+            <div className="duo-lock-header-row">
+              <span className="duo-lock-icon">🦉</span>
+              <h2 className="duo-lock-title">DuoSpark</h2>
+            </div>
+            <p className="duo-lock-desc">
+              请输入访问密码以解锁控制台
+            </p>
+            <form className="duo-lock-form" onSubmit={handleUnlock}>
+              <div className="duo-lock-input-wrap">
+                <input
+                  type={showLockPassword ? "text" : "password"}
+                  className="duo-lock-input"
+                  placeholder="请输入访问密码..."
+                  value={inputPassword}
+                  onChange={(e) => {
+                    setInputPassword(e.target.value);
+                    if (lockError) setLockError('');
+                  }}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="duo-lock-eye-btn"
+                  onClick={() => setShowLockPassword(!showLockPassword)}
+                  title={showLockPassword ? "隐藏密码" : "显示密码"}
+                  tabIndex="-1"
+                >
+                  {showLockPassword ? '👁️' : '🔒'}
+                </button>
+              </div>
+              {lockError && (
+                <div className="duo-lock-error">
+                  <span>⚠️</span>
+                  <span>{lockError}</span>
+                </div>
+              )}
+              <button
+                type="submit"
+                className="duo-lock-btn"
+                disabled={verifyingPassword}
+              >
+                {verifyingPassword ? '正在安全核验...' : '验证并解锁控制台'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🔑 控制台安全访问密码设置弹窗 (Modal) */}
+      {showPasswordModal && (
+        <div className="duo-modal-overlay" onClick={() => setShowPasswordModal(false)}>
+          <div className="duo-modal-card" onClick={(e) => e.stopPropagation()}>
+            <button 
+              type="button" 
+              className="duo-modal-close-btn"
+              onClick={() => setShowPasswordModal(false)}
+              title="关闭弹窗"
+            >
+              ✕
+            </button>
+
+            <div className="duo-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span className="duospark-mini-icon">⚡</span>
+                <div>
+                  <div className="duo-modal-title">
+                    <span>DuoSpark 安全访问密码</span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    控制台开屏访问保护配置
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className={`badge ${hasAccessPassword ? 'badge-green' : 'badge-muted'}`} style={{ fontSize: '11px', padding: '3px 8px' }}>
+                {hasAccessPassword ? '● 已开启开屏保护 (D1 加密存储)' : '○ 未启用安全保护'}
+              </span>
+            </div>
+
+            <p className="duo-modal-desc">
+              设置开屏访问密码后，任何人访问控制台均需密码验证。密码将以 PBKDF2 强哈希（带 16 字节随机盐）单向加密保存在 Cloudflare D1 数据库中，杜绝明文泄露。
+            </p>
+
+            <div className="duo-modal-body">
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label className="input-label" style={{ marginBottom: 0 }}>安全访问密码</label>
+                  <span 
+                    style={{ fontSize: '11px', color: 'var(--text-muted)', cursor: 'pointer' }} 
+                    onClick={() => setShowAccessPassword(!showAccessPassword)}
+                  >
+                    {showAccessPassword ? '隐藏明文' : '显示明文'}
+                  </span>
+                </div>
+                <div className="duo-lock-input-wrap">
+                  <input 
+                    type={showAccessPassword ? 'text' : 'password'}
+                    className="input-field" 
+                    placeholder={hasAccessPassword ? "输入新密码进行修改覆盖..." : "设置开屏访问密码..."}
+                    value={accessPassword} 
+                    onChange={(e) => setAccessPassword(e.target.value)} 
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                <span>🛡️</span>
+                <span>数据库将仅存储 PBKDF2 密文哈希，即使数据库泄露也无法逆向还原</span>
+              </div>
+            </div>
+
+            <div className="duo-modal-footer">
+              <div>
+                {hasAccessPassword ? (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={async () => {
+                      await handleSavePassword('');
+                      setShowPasswordModal(false);
+                    }}
+                    disabled={savingConfig}
+                    style={{ fontSize: '12px', color: '#ef4444' }}
+                  >
+                    清除密码
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setShowPasswordModal(false)}
+                    disabled={savingConfig}
+                  >
+                    取消
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {hasAccessPassword && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setShowPasswordModal(false)}
+                    disabled={savingConfig}
+                  >
+                    关闭
+                  </button>
+                )}
+                <button 
+                  type="button"
+                  className="btn btn-primary btn-sm" 
+                  onClick={async () => {
+                    if (!accessPassword.trim()) {
+                      showToast('请输入要设置的新密码', 'error');
+                      return;
+                    }
+                    await handleSavePassword(accessPassword.trim());
+                    setShowPasswordModal(false);
+                  }}
+                  disabled={savingConfig || !accessPassword.trim()}
+                >
+                  {savingConfig ? '正在加密保存...' : '保存并加密存储'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Floating Toast Notification (右上方浮窗提示，完全脱离文档流，不引起页面抖动) */}
       <div className="toast-floating-container">
         {toast && (
@@ -543,7 +837,6 @@ export default function DuoGuardianPage() {
         )}
       </div>
 
-
       {/* Top Header */}
       <header className="dashboard-header">
         <div className="header-brand-wrap">
@@ -555,7 +848,7 @@ export default function DuoGuardianPage() {
           </p>
         </div>
 
-        {/* Right Corner: Time, Status, and Theme Switcher Button */}
+        {/* Right Corner: Time, Status, Theme Switcher, and Lock Button */}
         <div className="header-actions">
           <div className="badge badge-muted header-time-badge">
             {currentDayName} {currentTime || '--:--:--'}
@@ -574,6 +867,31 @@ export default function DuoGuardianPage() {
             <span className="btn-theme-icon">{themeDisplay.icon}</span>
             <span className="btn-theme-text">{themeDisplay.label}</span>
           </button>
+
+          {/* Password Settings Modal Trigger */}
+          <button 
+            className="header-lock-btn" 
+            onClick={() => {
+              setShowPasswordModal(true);
+              setAccessPassword('');
+            }} 
+            title="设置或修改控制台开屏访问密码"
+          >
+            <span className="btn-theme-icon">🔑</span>
+            <span className="btn-theme-text">密码设置</span>
+          </button>
+
+          {/* Lock Console Button */}
+          {hasAccessPassword && (
+            <button 
+              className="header-lock-btn" 
+              onClick={handleLockConsole} 
+              title="锁定当前控制台"
+            >
+              <span className="btn-theme-icon">🔒</span>
+              <span className="btn-theme-text">锁定</span>
+            </button>
+          )}
         </div>
       </header>
 
