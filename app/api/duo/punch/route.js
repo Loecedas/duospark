@@ -7,7 +7,7 @@ import '@/lib/scheduler'; // 确保调度器后台运行
 
 export async function POST(request) {
   try {
-    const config = getConfig();
+    const config = await getConfig();
     if (!config.DUO_JWT_TOKEN) {
       return NextResponse.json({
         ok: false,
@@ -49,7 +49,7 @@ export async function POST(request) {
       }, config.FEISHU);
 
       // 锁定今日打卡状态
-      saveConfig({
+      await saveConfig({
         schedule: {
           ...config.schedule,
           lastPunchedDate: todayDate,
@@ -59,7 +59,7 @@ export async function POST(request) {
       });
     }
 
-    addHistoryEntry({
+    await addHistoryEntry({
       type: result.action === "completed" ? "MANUAL_PUNCH" : "SKIPPED",
       title: result.action === "completed" ? "打卡通关成功" : "跳过通关 (连胜已保住)",
       status: result.action === "completed" ? "SUCCESS" : "SKIPPED",
@@ -79,7 +79,7 @@ export async function POST(request) {
     });
   } catch (err) {
     console.error("Duo punch error:", err);
-    addHistoryEntry({
+    await addHistoryEntry({
       type: "ERROR",
       title: "打卡通关失败",
       status: "ERROR",

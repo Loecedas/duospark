@@ -3,7 +3,7 @@ import { getSchedulerStatus, runAutoCheckCycle } from '@/lib/scheduler';
 
 export async function GET() {
   try {
-    const status = getSchedulerStatus();
+    const status = await getSchedulerStatus();
     return NextResponse.json({ ok: true, scheduler: status });
   } catch (err) {
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
@@ -19,7 +19,7 @@ export async function POST(request) {
     } catch {}
 
     const result = await runAutoCheckCycle(force);
-    const updatedStatus = getSchedulerStatus();
+    const updatedStatus = await getSchedulerStatus();
     return NextResponse.json({ ok: true, result, scheduler: updatedStatus });
   } catch (err) {
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });

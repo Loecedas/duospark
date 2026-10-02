@@ -89,7 +89,7 @@ npm run dev
 
 启动完成后，在浏览器中打开：[http://localhost:3000](http://localhost:3000)
 
-### 4. 生产部署与打包
+### 4. 本地生产打包与运行
 
 ```bash
 # 编译生产打包
@@ -98,6 +98,45 @@ npm run build
 # 启动生产服务
 npm run start
 ```
+
+### 5. 部署到 Cloudflare (Workers / Pages)
+
+本项目已全面适配 Cloudflare 官方 **OpenNext** 全栈运行时，并已接入 **Cloudflare D1 SQL 数据库**（`duospark`）持久化存储打卡时间规则、用户凭据与打卡日志。
+
+#### 步骤 1：数据库准备与结构初始化
+当前已在 [`wrangler.jsonc`](./wrangler.jsonc) 中自动绑定您的 D1 数据库：
+```jsonc
+"d1_databases": [
+  {
+    "binding": "DB",
+    "database_name": "duospark",
+    "database_id": "df994474-8ed4-462c-b5a3-392c0e721573"
+  }
+]
+```
+数据库结构定义在 [`schema.sql`](./schema.sql) 中，如需重新初始化或迁移云端表，可随时执行：
+```bash
+npx wrangler d1 execute duospark --remote --file=./schema.sql
+```
+
+#### 步骤 2：预览与一键部署
+```bash
+# 1. 本地模拟 Cloudflare Worker + D1 环境预览
+npm run preview
+
+# 2. 一键构建并部署至 Cloudflare Workers
+npm run deploy
+```
+
+#### ☁️ 步骤 3：Cloudflare 控制台环境变量配置
+部署后，请在 Cloudflare 仪表盘控制台中进入您的 Worker：
+**Settings (设置) -> Variables and Secrets (变量与机密)**，添加以下环境变量：
+- `DUO_JWT_TOKEN`：您的多邻国账号 JWT Token
+- `FEISHU_APP_ID`：飞书自建应用 ID
+- `FEISHU_APP_SECRET`：飞书自建应用 Secret
+- `FEISHU_RECEIVE_PHONE_OR_EMAIL`：（选填）推送接收人手机号或邮箱
+
+*(注：系统内置了 Cloudflare Cron Triggers 定时巡检打卡规则，部署时将由 `wrangler.jsonc` 自动生效。)*
 
 ---
 

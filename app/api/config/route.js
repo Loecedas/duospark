@@ -32,8 +32,8 @@ function sanitizeConfigForClient(cfg) {
 }
 
 export async function GET() {
-  const rawConfig = getConfig();
-  const scheduler = getSchedulerStatus();
+  const rawConfig = await getConfig();
+  const scheduler = await getSchedulerStatus();
   const { safeConfig, masked } = sanitizeConfigForClient(rawConfig);
 
   return NextResponse.json({
@@ -47,11 +47,11 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const result = saveConfig(body);
+    const result = await saveConfig(body);
     if (!result.ok) {
       return NextResponse.json({ ok: false, error: result.error }, { status: 500 });
     }
-    const scheduler = getSchedulerStatus();
+    const scheduler = await getSchedulerStatus();
     const { safeConfig, masked } = sanitizeConfigForClient(result.config);
 
     return NextResponse.json({

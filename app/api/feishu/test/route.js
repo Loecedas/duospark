@@ -5,7 +5,7 @@ import { addHistoryEntry } from '@/lib/history';
 
 export async function POST(request) {
   try {
-    const config = getConfig();
+    const config = await getConfig();
     let customConf = { ...config.FEISHU };
 
     try {
@@ -29,7 +29,7 @@ export async function POST(request) {
       ]
     }, customConf);
 
-    addHistoryEntry({
+    await addHistoryEntry({
       type: "FEISHU_TEST",
       title: "飞书测试推送",
       status: sendResult.ok ? "SUCCESS" : "ERROR",

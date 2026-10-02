@@ -14,7 +14,7 @@ export async function POST(request) {
 
 async function handleCheck(request) {
   try {
-    const config = getConfig();
+    const config = await getConfig();
     if (!config.DUO_JWT_TOKEN) {
       return NextResponse.json({
         ok: false,
@@ -26,7 +26,7 @@ async function handleCheck(request) {
 
     // 若检测到今日已打卡，立即锁定今日打卡状态，使后台调度器进入完全休眠
     if (status.hasExtendedToday) {
-      saveConfig({
+      await saveConfig({
         schedule: {
           ...config.schedule,
           lastPunchedDate: status.todayDate,
@@ -36,7 +36,7 @@ async function handleCheck(request) {
       });
     }
 
-    addHistoryEntry({
+    await addHistoryEntry({
       type: "CHECK",
       title: "手动检测连胜状态",
       status: status.hasExtendedToday ? "SECURE" : "WARNING",
@@ -54,7 +54,7 @@ async function handleCheck(request) {
     });
   } catch (err) {
     console.error("Duo check error:", err);
-    addHistoryEntry({
+    await addHistoryEntry({
       type: "CHECK",
       title: "检测账号失败",
       status: "ERROR",

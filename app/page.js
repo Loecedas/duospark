@@ -219,23 +219,25 @@ export default function DuoGuardianPage() {
     }, 4500);
   };
 
-  // Theme Management
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('duo_theme') || 'system';
-    setThemeMode(savedTheme);
-    applyTheme(savedTheme);
-  }, []);
-
   const applyTheme = (mode) => {
     let resolved = 'dark';
     if (mode === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
       resolved = prefersDark ? 'dark' : 'light';
     } else {
       resolved = mode;
     }
-    document.documentElement.setAttribute('data-theme', resolved);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', resolved);
+    }
   };
+
+  // Theme Management
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('duo_theme') || 'system';
+    applyTheme(savedTheme);
+    setThemeMode(savedTheme);
+  }, []);
 
   const handleCycleTheme = () => {
     const order = ['system', 'light', 'dark'];
@@ -280,15 +282,6 @@ export default function DuoGuardianPage() {
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
   }, []);
-
-  // Initial load
-  useEffect(() => {
-    loadAllData();
-  }, []);
-
-  const loadAllData = async () => {
-    await Promise.all([fetchConfig(), fetchUserStatus(), fetchHistory()]);
-  };
 
   const fetchConfig = async () => {
     try {
@@ -356,6 +349,16 @@ export default function DuoGuardianPage() {
       console.error(e);
     }
   };
+
+  const loadAllData = async () => {
+    await Promise.all([fetchConfig(), fetchUserStatus(), fetchHistory()]);
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadAllData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Immediate Punch
   const handleImmediatePunch = async () => {

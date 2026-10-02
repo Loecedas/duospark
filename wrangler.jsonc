@@ -1,0 +1,45 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "duo-guardian",
+	"compatibility_date": "2026-10-02",
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"services": [
+		{
+			// Self-reference service binding, the service name must match the worker name
+			// see https://opennext.js.org/cloudflare/caching
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "duo-guardian"
+		}
+	],
+	"images": {
+		// Enable image optimization
+		// see https://opennext.js.org/cloudflare/howtos/image
+		"binding": "IMAGES"
+	},
+	"d1_databases": [
+		{
+			// Cloudflare D1 SQL 数据库绑定：存储打卡时间规则、用户凭据与打卡日志
+			"binding": "DB",
+			"database_name": "duospark",
+			"database_id": "df994474-8ed4-462c-b5a3-392c0e721573"
+		}
+	],
+	"triggers": {
+		// 定时触发防线任务 (Cloudflare Cron Triggers - 使用 UTC 时间)
+		"crons": [
+			"*/30 * * * *", // 每 30 分钟进行一次巡检保底
+			"0 9 * * *",    // UTC 09:00 = 北京时间 17:00 (周日专属防线预警)
+			"10 9 * * *",   // UTC 09:10 = 北京时间 17:10 (周日专属防线自动保底打卡)
+			"0 15 * * *",   // UTC 15:00 = 北京时间 23:00 (平日晚间防线预警)
+			"10 15 * * *"   // UTC 15:10 = 北京时间 23:10 (平日晚间防线自动保底打卡)
+		]
+	}
+}
