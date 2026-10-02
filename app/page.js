@@ -911,7 +911,7 @@ export default function DuoGuardianPage() {
                   自由绑定任何多邻国账号，随时可更换或切换
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="card-header-actions" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <button 
                   className="btn btn-secondary btn-sm" 
                   onClick={() => setShowTokenInput(!showTokenInput)}
@@ -941,14 +941,15 @@ export default function DuoGuardianPage() {
                 <label className="input-label" style={{ fontSize: '13px', fontWeight: '600' }}>
                   设置 / 切换多邻国账号 (输入任何账号的 JWT Token)
                 </label>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
                   <input 
                     className="input-field" 
                     placeholder="在此粘贴多邻国账号 JWT Token (浏览器 Cookie 中的 jwt_token)" 
                     value={jwt} 
                     onChange={(e) => setJwt(e.target.value)} 
+                    style={{ flex: '1 1 200px', minWidth: 0 }}
                   />
-                  <button className="btn btn-primary btn-sm" onClick={() => handleSaveToken()} disabled={savingConfig}>
+                  <button className="btn btn-primary btn-sm" onClick={() => handleSaveToken()} disabled={savingConfig} style={{ whiteSpace: 'nowrap' }}>
                     保存并连接
                   </button>
                   {jwt && (
@@ -956,6 +957,7 @@ export default function DuoGuardianPage() {
                       className="btn btn-secondary btn-sm" 
                       onClick={() => { setJwt(''); handleSaveToken(''); }} 
                       disabled={savingConfig}
+                      style={{ whiteSpace: 'nowrap' }}
                     >
                       清空解绑
                     </button>
@@ -969,22 +971,22 @@ export default function DuoGuardianPage() {
 
             {/* User Info Bar */}
             {user ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'var(--bg-card-subtle)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#202b3d', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>
+              <div className="user-info-bar">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#202b3d', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>
                     {user?.picture ? (
                       <img src={user.picture + '/xlarge'} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
                       '🦉'
                     )}
                   </div>
-                  <div>
-                    <div style={{ fontWeight: '600', fontSize: '16px' }}>{user.name || '多邻国学员'}</div>
-                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>@{user.username || 'duolingo_user'}</div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: '600', fontSize: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name || '多邻国学员'}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{user.username || 'duolingo_user'}</div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="user-info-badges">
                   {isAlreadyPunchedToday ? (
                     <span className="badge badge-green" style={{ padding: '6px 14px' }}>
                       ✓ 今日已打卡 · 连胜安全
@@ -1038,13 +1040,13 @@ export default function DuoGuardianPage() {
                   }}
                 />
               </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                <span style={{ flex: '1 1 200px', wordBreak: 'break-word' }}>
                   {isAlreadyPunchedToday 
                     ? `🔥 今日连胜已稳固 (${user?.streak ?? 0} 天)，单日仅打卡 1 次，防重复保护生效中` 
                     : `⏳ 今日尚未完成打卡，系统将在到达时间自动补卡并向飞书推送战报`}
                 </span>
-                <span style={{ fontWeight: '600', color: isAlreadyPunchedToday ? '#58cc02' : 'var(--text-secondary)' }}>
+                <span style={{ fontWeight: '600', color: isAlreadyPunchedToday ? '#58cc02' : 'var(--text-secondary)', flexShrink: 0 }}>
                   {isAlreadyPunchedToday ? '100%' : (punching ? '作答中...' : '0%')}
                 </span>
               </div>
@@ -1075,10 +1077,10 @@ export default function DuoGuardianPage() {
 
             {/* Token Snippet */}
             {jwt && (
-              <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--text-muted)' }}>
-                <span>当前账号 Token：{jwt.substring(0, 16)}...{jwt.slice(-8)}</span>
+              <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                <span style={{ wordBreak: 'break-all' }}>当前账号 Token：{jwt.substring(0, 16)}...{jwt.slice(-8)}</span>
                 <span 
-                  style={{ cursor: 'pointer', color: '#58cc02', fontWeight: '500' }} 
+                  style={{ cursor: 'pointer', color: '#58cc02', fontWeight: '500', flexShrink: 0 }} 
                   onClick={() => setShowTokenInput(!showTokenInput)}
                 >
                   更换账号
@@ -1119,14 +1121,14 @@ export default function DuoGuardianPage() {
                 </span>
                 <span className="badge badge-muted" style={{ fontSize: '11px' }}>全天候巡检</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
                 <span>每天每隔</span>
                 <input 
                   type="number" 
                   min="1" 
                   max="24" 
                   className="input-field" 
-                  style={{ width: '80px', padding: '6px 10px', textAlign: 'center' }} 
+                  style={{ width: '70px', padding: '6px 10px', textAlign: 'center' }} 
                   value={intervalHours} 
                   onChange={(e) => setIntervalHours(Math.max(1, Number(e.target.value) || 5))} 
                 />
@@ -1146,7 +1148,7 @@ export default function DuoGuardianPage() {
                 <span className="badge badge-green" style={{ fontSize: '11px' }}>核心防线</span>
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="time-rule-grid">
                 <div>
                   <label className="input-label">初次预警检测时间</label>
                   <TimeInput 
@@ -1178,7 +1180,7 @@ export default function DuoGuardianPage() {
                 <span className="badge badge-orange" style={{ fontSize: '11px' }}>周日结算前守护</span>
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="time-rule-grid">
                 <div>
                   <label className="input-label">周日初次检测时间</label>
                   <TimeInput 
@@ -1362,14 +1364,15 @@ export default function DuoGuardianPage() {
 
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', flexWrap: 'wrap', gap: '10px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', flex: '1 1 220px' }}>
                 💡 战报将自动推送到当前飞书应用管理员，无需填写手机号或邮箱
               </span>
               <button 
                 className="btn btn-secondary" 
                 onClick={handleSaveFeishu}
                 disabled={savingConfig}
+                style={{ flexShrink: 0 }}
               >
                 保存飞书配置
               </button>
@@ -1419,7 +1422,9 @@ export default function DuoGuardianPage() {
                       background: 'var(--bg-card-subtle)',
                       borderRadius: 'var(--radius-sm)',
                       border: '1px solid var(--border-subtle)',
-                      fontSize: '13px'
+                      fontSize: '13px',
+                      flexWrap: 'wrap',
+                      gap: '8px'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
