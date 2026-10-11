@@ -197,9 +197,9 @@ export default function DuoGuardianPage() {
   const [schedEnabled, setSchedEnabled] = useState(true);
   const [intervalHours, setIntervalHours] = useState(5);
   const [normalCheckTime, setNormalCheckTime] = useState('23:00');
-  const [normalPunchTime, setNormalPunchTime] = useState('23:10');
+  const [normalPunchTime, setNormalPunchTime] = useState('23:05');
   const [sundayCheckTime, setSundayCheckTime] = useState('17:00');
-  const [sundayPunchTime, setSundayPunchTime] = useState('17:10');
+  const [sundayPunchTime, setSundayPunchTime] = useState('17:05');
   const [targetXp, setTargetXp] = useState(15);
   const [customXpMode, setCustomXpMode] = useState(false);
   const [notifyOnWarning, setNotifyOnWarning] = useState(true);
@@ -393,9 +393,9 @@ export default function DuoGuardianPage() {
         setSchedEnabled(sc.enabled !== false);
         setIntervalHours(sc.intervalHours || 5);
         setNormalCheckTime(sc.normalCheckTime || '23:00');
-        setNormalPunchTime(sc.normalPunchTime || '23:10');
+        setNormalPunchTime(sc.normalPunchTime || '23:05');
         setSundayCheckTime(sc.sundayCheckTime || '17:00');
-        setSundayPunchTime(sc.sundayPunchTime || '17:10');
+        setSundayPunchTime(sc.sundayPunchTime || '17:05');
         
         const xp = Number(sc.targetXp) || 15;
         setTargetXp(xp);
@@ -1070,7 +1070,7 @@ export default function DuoGuardianPage() {
               <div className="stat-box">
                 <div className="stat-label">今日守护策略</div>
                 <div className="stat-val" style={{ fontSize: '13px', lineHeight: '1.4', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                  {schedulerInfo?.isSunday ? `周日 17:10 自动打卡` : `平日 23:10 自动打卡`}
+                  {schedulerInfo?.isSunday ? `周日 ${sundayPunchTime || '17:05'} 自动打卡` : `平日 ${normalPunchTime || '23:05'} 自动打卡`}
                 </div>
               </div>
             </div>
@@ -1098,7 +1098,7 @@ export default function DuoGuardianPage() {
                   <span>定时检测与自动打卡规则</span>
                 </div>
                 <div className="card-subtitle">
-                  每隔 5 小时自动巡检；平日 23:10 自动打卡；周日 17:10 自动打卡
+                  每隔 5 小时自动巡检；平日 23:00 预警、23:05 自动打卡；周日 17:00 预警、17:05 自动打卡
                 </div>
               </div>
               
@@ -1164,9 +1164,9 @@ export default function DuoGuardianPage() {
                   <TimeInput 
                     value={normalPunchTime} 
                     onChange={setNormalPunchTime} 
-                    placeholder="23:10"
+                    placeholder="23:05"
                   />
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>默认 23:10（隔十分钟若仍未打卡则自动打卡）</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>默认 23:05（首个时刻发提醒，隔5分钟若未打卡则自动打卡）</span>
                 </div>
               </div>
             </div>
@@ -1196,9 +1196,9 @@ export default function DuoGuardianPage() {
                   <TimeInput 
                     value={sundayPunchTime} 
                     onChange={setSundayPunchTime} 
-                    placeholder="17:10"
+                    placeholder="17:05"
                   />
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>默认 17:10（隔十分钟若未打卡则自动打卡）</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>默认 17:05（首个时刻发提醒，隔5分钟若未打卡则自动打卡）</span>
                 </div>
               </div>
             </div>

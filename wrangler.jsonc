@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"main": ".open-next/worker.js",
+	"main": "cloudflare-worker.js",
 	"name": "duospark",
 	"compatibility_date": "2026-10-02",
 	"compatibility_flags": [
@@ -33,13 +33,10 @@
 		}
 	],
 	"triggers": {
-		// 定时触发防线任务 (Cloudflare Cron Triggers - 使用 UTC 时间)
+		// 定时触发防线任务 (Cloudflare Cron Triggers)
+		// 每 1 分钟高频巡检心跳，动态读取用户在控制台设置的任意时间，到点 100% 自动触发
 		"crons": [
-			"*/30 * * * *", // 每 30 分钟进行一次巡检保底
-			"0 9 * * *",    // UTC 09:00 = 北京时间 17:00 (周日专属防线预警)
-			"10 9 * * *",   // UTC 09:10 = 北京时间 17:10 (周日专属防线自动保底打卡)
-			"0 15 * * *",   // UTC 15:00 = 北京时间 23:00 (平日晚间防线预警)
-			"10 15 * * *"   // UTC 15:10 = 北京时间 23:10 (平日晚间防线自动保底打卡)
+			"* * * * *"
 		]
 	}
 }
